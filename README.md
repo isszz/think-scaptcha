@@ -4,7 +4,7 @@
 > 使用`PHP`生成`SVG`格式的验证码  
 > 需要`PHP`大于`8.0`  
 > 支持`thinkphp6`以及`thinkphp8`  
-> 现已支持缓存字形，提高了在字体文件过大，导致生产验证码过慢的问题
+> 现已支持缓存字形，提高了在字体文件过大，导致生成验证码过慢的问题
 
 <p>
     <a href="https://packagist.org/packages/isszz/think-scaptcha"><img src="https://img.shields.io/badge/php->=8.0-8892BF.svg" alt="Minimum PHP Version"></a>
