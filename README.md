@@ -6,6 +6,15 @@
 > 支持`thinkphp6`以及`thinkphp8`  
 > 现已支持缓存字形，提高了在字体文件过大导致加运行过慢的问题
 
+<p>
+    <a href="https://packagist.org/packages/isszz/think-scaptcha"><img src="https://img.shields.io/badge/php->=8.0-8892BF.svg" alt="Minimum PHP Version"></a>
+    <a href="https://packagist.org/packages/isszz/think-scaptcha"><img src="https://img.shields.io/badge/thinkphp->=6.x-8892BF.svg" alt="Minimum Thinkphp Version"></a>
+    <a href="https://packagist.org/packages/isszz/think-scaptcha"><img src="https://poser.pugx.org/isszz/think-scaptcha/v/stable" alt="Stable Version"></a>
+    <a href="https://packagist.org/packages/isszz/think-scaptcha"><img src="https://poser.pugx.org/isszz/think-scaptcha/downloads" alt="Total Downloads"></a>
+    <a href="https://packagist.org/packages/isszz/think-scaptcha"><img src="https://poser.pugx.org/isszz/think-scaptcha/license" alt="License"></a>
+</p>
+
+
 ## 避坑
 - 务必开启session中间件，验证如果一直提示错误时，注意cookie的作用域，因为tp的sessionID是存储到cookie的，所以cookie作用域配置有问题也会导致无法正确验证
 - 每个文字首次载入时还是需要读取字体，所以在使用英文，数字的情况缓存下来还是挺快的，因为文字种类比较少，能很快缓存下来  

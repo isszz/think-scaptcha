@@ -1,6 +1,6 @@
 {
     "name": "isszz/think-scaptcha",
-    "description": "thinkphp6 and thinkphp8 svg captcha",
+    "description": "thinkphp8 SVG验证码，兼容tp6",
     "license": "MIT",
     "authors": [
         {
