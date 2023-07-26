@@ -1,0 +1,41 @@
+{
+    "name": "isszz/think-scaptcha",
+    "description": "thinkphp6 and thinkphp8 svg captcha",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "isszz",
+            "email": "isszz@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.0.0",
+        "ext-mbstring": "*",
+        "topthink/framework": "8.*"
+    },
+    "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
+        "psr-4": {
+            "isszz\\captcha\\": "src"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "dev-dev"
+        },
+        "think": {
+            "services":[
+                "isszz\\captcha\\Service"
+            ],
+            "config":{
+                "scaptcha": "src/config/config.php"
+            }
+        }
+    }
+}
