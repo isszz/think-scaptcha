@@ -110,25 +110,6 @@ tp模板文件中使用
 <img src="{$captchaSrc}" alt="captcha" onclick="this.src='{$captchaSrc}?'+Math.random();">
 
 ```
-<div>
-    <strong>scaptcha_src</strong>
-
-    @php
-    $captchaSrc = scaptcha_src([
-        'l' => 5,
-    ]);
-    @endphp
-
-    <p><img src="{{ $captchaSrc }}" alt="captcha" onclick="this.src='{{ $captchaSrc }}?'+Math.random();"></p>
-
-</div>
-<br />
-
-<div>
-    <strong>scaptcha_img</strong>
-    <p>{!! scaptcha_img('J_captcha', ['l' => 3]) !!}</p>
-</div>
-<br />
 
 ###若需要自行在控制器输出验证码🌰
 
