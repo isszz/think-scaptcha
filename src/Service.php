@@ -17,7 +17,6 @@ class Service extends \think\Service
         });
 
         $this->registerRoutes(function (Route $route) {
-            
             $route->get('scaptcha/check', "\\isszz\\captcha\\Controller@check");
             $route->get('scaptcha/svg', "\\isszz\\captcha\\Controller@svg");
             $route->get('scaptcha', "\\isszz\\captcha\\Controller@index");

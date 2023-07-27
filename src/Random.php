@@ -8,24 +8,6 @@ use isszz\captcha\support\Str;
 class Random
 {
     /**
-     * 获取灰色
-     *
-     * @param int $min
-     * @param int $max
-     * @return string
-     */
-    public function greyColor (int $min = 0, int $max = 0): string
-    {
-
-        $min = $min ?: 1;
-        $max = $max ?: 9;
-
-        $int = bin2hex((string) self::randomInt($min, $max));
-
-        return "#{$int}{$int}{$int}";
-    }
-    
-    /**
      * 获取随机字符
      *
      * @param array $options
@@ -45,7 +27,7 @@ class Random
         $i = -1;
         $out = '';
         
-        $chars = $options['charPreset'];
+        $chars = $options['char'];
     
         if ($ignoreChars) {
             $chars = $this->stripCharsFromString($chars, $ignoreChars);
@@ -179,6 +161,29 @@ class Random
         }
     }
 
+    /**
+     * 获取灰色
+     *
+     * @param int $min
+     * @param int $max
+     * @return string
+     */
+    public function greyColor (int $min = 0, int $max = 0): string
+    {
+        $min = $min ?: 1;
+        $max = $max ?: 9;
+
+        $int = bin2hex((string) self::randomInt($min, $max));
+
+        $color = "#{$int}{$int}{$int}";
+
+        if (strlen($color) > 7) {
+            $color = substr($color, 0, 7);
+        }
+        
+        return $color;
+    }
+    
     /**
      * 获取随机色
      *

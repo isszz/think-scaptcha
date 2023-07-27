@@ -20,6 +20,10 @@ class Captcha
     protected $config = [
         'type' => null,
         'cache' => true,
+        'api' => false, // 是否是API模式
+        // 设置为true时不管验证对错, 都会删除存储凭证，若验证失败则需要刷新一次验证码
+        // 设置为false时, 直到验证输入正确时, 才删除存储凭证，也就是允许试错
+        'disposable' => false,
         'width' => 150,
         'height' => 50,
         'noise' => 5, // 干扰线条的数量
@@ -29,12 +33,29 @@ class Captcha
         'size' => 4, // 验证码字数
         'ignoreChars' => '', // 验证码字符中排除
         'fontSize' => 52, // 字体大小
-        'charPreset' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', // 预设随机字符
+        'char' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', // 预设随机字符
         'math' => '', // 计算类型, 如果设置不是+或-则随机两种
         'mathMin' => 1, // 用于计算的最小值
         'mathMax' => 9, // 用于计算的最大值
         'salt' => '^%$YU$%%^U#$5', // 用于加密验证码的盐
         'fontName' => 'Comismsh.ttf', // 用于验证码的字体, 字体文件需要放置根目录config/fonts/目录下面
+
+        // api模式，token机制
+        'token' => [
+            // 也可以自定义\app\common\libs\MyStore::class,
+            // 自带可选：cache，redis，session，cookie；
+            // 建议使用redis或者cache（tp自带缓存），session和cookie会牵扯跨域，尽量避免使用cookie
+            'store' => 'redis',
+            'expire' => 300,
+            // 不配置时会获取tp的cache->redis驱动实例
+            'redis' => [
+                'host'       => '127.0.0.1',
+                'port'       => 6379,
+                'password'   => '',
+                'select'     => 0,
+                'timeout'    => 0,
+            ],
+        ],
     ];
 
     /**
@@ -57,6 +78,10 @@ class Captcha
      */
     protected ?object $ch2path;
 
+    /**
+     * Store drive
+     */
+    private ?object $store = null;
 
     /**
      * To svg string
@@ -67,6 +92,11 @@ class Captcha
      * Encode hash
      */
     private ?string $hash;
+
+    /**
+     * store token
+     */
+    private ?string $token;
 
     /**
      * To svg string
@@ -97,13 +127,17 @@ class Captcha
      * 创建文字验证码
      *
      * @param array $config
+     * @param bool $api
      * @return self
      */
-    public function create(array $config = []): self
+    public function create(array $config = [], bool $api = false): self
     {
+        if ($api) {
+            $config['api'] = true;
+        }
 
         if(!empty($config['math'])) {
-            return $this->createMath($config);
+            return $this->createMath($config, $api);
         }
 
         $this->config = $this->config($config);
@@ -121,10 +155,15 @@ class Captcha
      * 创建计算类型验证码
      *
      * @param array $config
+     * @param bool $api
      * @return self
      */
-    public function createMath(array $config = []): self
+    public function createMath(array $config = [], bool $api = false): self
     {
+        if ($api) {
+            $config['api'] = true;
+        }
+
         $this->config = $this->config($config);
 
         $this->initFont($this->config['fontName']);
@@ -166,29 +205,68 @@ class Captcha
      * 生成并写入hash的session
      *
      * @param string $text
-     * @return bool
+     * @return void
      */
-    private function setHash(string $text): bool
+    private function setHash(string $text): void
     {
         $text = mb_strtolower($text, 'UTF-8');
-        $hash = $this->encrypter()->encrypt($text);
 
-        $this->session->set('scaptcha', $hash);
+        // api模式, 需要使用token机制时
+        if ($this->config['api'] && !empty($this->config['token']['store'])) {
+            $this->token = $this->store()->put($text);
+        }
 
-        $this->text = $text;
-        $this->hash = $hash;
-
-        return true;
+        $this->session->set('scaptcha', $this->encrypter()->encrypt($text));
     }
 
     /**
      * 验证验证码是否正确
      *
      * @param string $code 验证码
+     * 
+     * @throws \isszz\captcha\CaptchaException
      * @return bool 验证码是否正确
      */
-    public function check(string $code): bool
+    public function check(string $code, string|null $token = null): bool
     {
+        $this->config = $this->config();
+
+        // 携带token则已api模式验证
+        if ($token && !empty($this->config['token']['store'])) {
+            $payload = $this->store()->get($token, $this->config['disposable']);
+
+            if(empty($payload)) {
+                return false;
+            }
+
+            if(!isset($payload['ttl']) || time() > $payload['ttl']) {
+                throw new CaptchaException('Captcha timeout.');
+            }
+
+            if(!isset($payload['ip']) || request()->ip() !== $payload['ip']) {
+                throw new CaptchaException('The IP address has been changed. The verification failed.');
+            }
+
+            if(!isset($payload['ua']) || crc32(request()->header('User-Agent')) !== $payload['ua']) {
+                throw new CaptchaException('The device has been switched, and the verification fails.');
+            }
+
+            if(!isset($payload['text'])) {
+                throw new CaptchaException('Captcha error.');
+            }
+
+            if($code == $payload['text']) {
+                // 验证成功删除token
+                // $this->store()->forget($token);
+                return true;
+            }
+
+            throw new CaptchaException('Captcha Validation failed.');
+
+            return false;
+        }
+
+        // 普通session模式
         if (!$this->session->has('scaptcha')) {
             return false;
         }
@@ -198,7 +276,7 @@ class Captcha
         $text = is_null($hash) ? null : $this->encrypter()->decrypt($hash);
         $res = $code === $text;
 
-        if ($res) {
+        if ($res || $this->config['disposable']) {
             $this->session->delete('scaptcha');
         }
 
@@ -301,6 +379,43 @@ class Captcha
         $this->ch2path = $this->ch2path ?? new Ch2Path($fontName);
     }
 
+    public function getToken()
+    {
+        return $this->token ?? null;
+    }
+
+    /**
+     * Initialize storage drive
+     *
+     * @return object
+     */
+    private function store(): object|null
+    {
+        if(!is_null($this->store)) {
+            return $this->store;
+        }
+
+        $config = $this->config['token'];
+
+        $class = match($config['store']) {
+            // 可以跨域名
+            'redis' => \isszz\captcha\store\RedisStore::class,
+            'cache' => \isszz\captcha\store\CacheStore::class,
+            // 无法跨域名
+            'session' => \isszz\captcha\store\SessionStore::class,
+            // 可能是自定义的
+            default => $config['store'],
+        };
+
+        $class = $class ?? \isszz\captcha\store\CacheStore::class;
+
+        if (!is_string($class) || !class_exists($class) || !is_subclass_of($class, Store::class)) {
+            throw new CaptchaException('Captcha storage drive class: '. $class .'. invalid.');
+        }
+
+        return $this->store = new $class($this, $this->encrypter(), $config['expire']);
+    }
+
     /**
      * Initialize encrypter
      *
@@ -350,10 +465,28 @@ class Captcha
         $this->mctime = $mctime;
     }
 
+    public function base64($type = 1)
+    {
+        if($this->svg) {
+            if ($type == 1) {
+                return 'data:image/svg+xml,'. str_replace(
+                    ['"', '%', '#', '{', '}', '<', '>'],
+                    ["'", '%25', '%23', '%7B', '%7D', '%3C', '%3E'],
+                    $this->svg
+                );
+            }
+
+            return 'data:image/svg+xml;base64,'. chunk_split(base64_encode($this->svg));
+        }
+
+        return '';
+    }
+
     /**
      * 获取验证码
      */
-    public function __toString() {
+    public function __toString()
+    {
         return $this->svg ?: '';
     }
 }

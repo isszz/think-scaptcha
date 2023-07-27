@@ -32,12 +32,13 @@ composer require isszz/think-scaptcha
 ## 配置
 
 ```php
-<?php
-// SVG 验证码配置
-
 return [
     'type' => null, // 单独的配置项
     'cache' => true, // 是否启用字形缓存
+    'api' => false, // 是否是API模式
+    // 设置为true时不管验证对错, 都会删除存储凭证，若验证失败则需要刷新一次验证码
+    // 设置为false时, 直到验证输入正确时, 才删除存储凭证，也就是允许试错
+    'disposable' => false,
     'width' => 150, // 宽度
     'height' => 50, // 高度
     'noise' => 5, // 干扰线条的数量
@@ -47,15 +48,35 @@ return [
     'size' => 4, // 验证码字数
     'ignoreChars' => '', // 验证码字符中排除
     'fontSize' => 52, // 字体大小
-    'charPreset' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', // 预设随机字符
+    'char' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', // 预设随机字符
     'math' => '', // 运算模式：1=加法，2=减法，3=乘法，4=除法，或非1=4，则随机四种
     'mathMin' => 1, // 用于计算的最小值
     'mathMax' => 9, // 用于计算的最大值
     'fontName' => 'Comismsh.ttf', // 用于验证码的字体, 字体文件需要放置根目录config/fonts/目录下面
 
-    // 单独的配置
-    'admin' => [
+    // API模式，使用token机制，使用这里的配置后API会携带一个token，在验证时需要携带token和输入的code进行验证
+    /*'token' => [
+        // 也可以自定义\app\common\libs\MyStore::class,
+        // 自带可选：cache，redis，session；
+        // 建议使用redis或者cache（tp自带缓存），session会牵扯跨域
+        'store' => 'cache', 
+        'expire' => 300,
+        // 不配置时会获取tp的cache->redis驱动实例
+        'redis' => [
+            'host' => '127.0.0.1',
+            'port' => 6379,
+            'password' => '',
+            'select' => 1,
+            'timeout' => 0,
+        ],
+    ],*/
+
+    // 单独的配置, 会覆盖上面的配置
+    'test' => [
+        'noise' => 3,
         'color' => false,
+        'char' => '0123456789',
+        // 'token' => null,
     ],
 ];
 ```
@@ -73,6 +94,7 @@ return [
          /n/干扰线条数量
          /c/文字是否随机色
          /b/背景颜色
+         /cs/api模式输出格式1=svg，2=base64
          /rt/禁用缓存字形，生产模式不建议禁用
          /reset/删除已缓存字形，不建议在生产模式一直加在url参数中，否则字形缓存无效，字体文件超过3MB会比较慢
 ```
@@ -85,7 +107,8 @@ return [
 {
     'code': 0,
     'msg': 'success',
-    'svg': '<svg xmlns=\"....\"></svg>',
+    'token': '8SOy2KSfcSVIP7qTogFCLvLZb9tj5eTB', // API模式，使用token机制否则返回null
+    'svg': 'data:image/svg+xml,.../%3E%3C/svg%3E',
 }
 
 ```
@@ -119,6 +142,17 @@ tp模板文件中使用
 <img src="{$captchaSrc}" alt="captcha" onclick="this.src='{$captchaSrc}?'+Math.random();">
 
 ```
+如果是API方式调用
+```php
+[$token, $image] = scaptcha_api([
+    'noise' => 3, // 3条干扰线
+    'color' => false, // 灰色模式
+    'char' => '0123456789', // 数字验证码
+]);
+
+// 或指定单独的配置，第二个参数用于选择生成的格式false=svg，true=base64
+[$token, $image] = scaptcha_api('test', true);
+```
 
 ### 若需要自行在控制器输出验证码🌰
 
@@ -150,7 +184,7 @@ class Captcha
     /**
      * 验证输入验证码是否正确|输出json
     */
-    public function check($code)
+    public function check($code, string|null $token = null)
     {
         $json = [
             'code' => 0,
@@ -158,7 +192,7 @@ class Captcha
             'data' => null,
         ];
 
-        if(!scaptcha_check($code)) {
+        if(!scaptcha_check($code, $token)) {
             $json['code'] = 1;
             $json['msg'] = 'error';
         }
@@ -175,6 +209,10 @@ class Captcha
 /scaptcha/check/code/xxx
 // 或者
 /scaptcha/check?code=xxx
+// 如果是API模式
+/scaptcha/check/code/输入验证码/token/接口返回的token字段
+/scaptcha/check?code=输入验证码&token=接口返回的token字段
+
 // 返回
 {
     'code': 0, // 0=验证成；1=验证失败；2=未提交验证码；3=验证码组件报错，请issue

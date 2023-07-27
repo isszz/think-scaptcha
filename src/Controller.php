@@ -20,17 +20,17 @@ class Controller
 		}
 
 		$data = [];
-
 		try {
 			$data['code'] = 0;
 			$data['msg'] = 'success';
 
-			$content = (string) $captcha->create($config);
+			$content = (string) $captcha->create($config, true)->base64(isset($config['compress']) ? 2 : 1);
 
 			if (app()->isDebug()) {
 				$data['mtime'] = $captcha->mctime(true);
 			}
 
+			$data['token'] = $captcha->getToken();
 			$data['svg'] = $content;
 			unset($content);
 
@@ -74,6 +74,7 @@ class Controller
     public function check(Captcha $captcha, \think\Request $request)
     {
     	$code = $request->param('code') ?? null;
+    	$token = $request->param('token') ?? null;
 
         $json = [
             'code' => 0,
@@ -87,7 +88,7 @@ class Controller
         }
 
 		try {
-	    	if (!$captcha->check($code)) {
+	    	if (!$captcha->check($code, $token)) {
 	            $json['code'] = 1;
 	            $json['msg'] = 'Captcha code error';
 	    	}
@@ -165,6 +166,10 @@ class Controller
 		// 背景色, fefefe
 		if(!empty($params['b'])) {
 			$config['background'] = $params['b'];
+		}
+
+		if(!empty($params['cs'])) {
+			$config['compress'] = true;
 		}
 
 		if(!empty($params['rt'])) {

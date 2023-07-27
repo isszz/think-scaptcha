@@ -23,11 +23,11 @@ class Arr
      * Add an element to an array using "dot" notation if it doesn't exist.
      *
      * @param  array   $array
-     * @param  mixed  $key
+     * @param  string|int|float  $key
      * @param  mixed   $value
      * @return array
      */
-    public static function add(array $array, mixed $key, mixed $value): array
+    public static function add(array $array, $key, $value): array
     {
         if (is_null(static::get($array, $key))) {
             static::set($array, $key, $value);
@@ -40,11 +40,11 @@ class Arr
      * Get an item from an array using "dot" notation.
      *
      * @param  \ArrayAccess|array   $array
-     * @param  mixed  $key
+     * @param  string|int|null  $key
      * @param  mixed   $default
      * @return mixed
      */
-    public static function get(array $array, $key, mixed $default = null)
+    public static function get(array $array, $key, $default = null)
     {
         if (is_null($key)) {
             return $array;

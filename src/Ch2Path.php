@@ -157,10 +157,10 @@ class Ch2Path
      * 获取文字的glyph索引id
      * 
      * @param  string  $text
-     * @return mixed
+     * @return void
      */
-    public function charToGlyphIndex($text) {
-        
+    public function charToGlyphIndex($text)
+    {
         $code = Str::unicode($text);
 
 	    if ($this->glyphMaps) {
@@ -170,6 +170,7 @@ class Ch2Path
                 }
             }
 	    }
+
 	    return null;
 	}
 
