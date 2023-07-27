@@ -158,7 +158,7 @@ class Controller
 		}
 
 		// 文字是否随机色
-		if(isset($params['c']) && $params['c'] != '0') {
+		if(isset($params['c'])) {
 			$config['color'] = $params['c'] != '0';
 		}
 
