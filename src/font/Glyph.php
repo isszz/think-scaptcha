@@ -7,6 +7,7 @@ use isszz\captcha\CaptchaException;
 class Glyph
 {
     public $path;
+    public $fontName; 
 
     public function __construct($unitsPerEm, $fontName, $commands = [])
     {

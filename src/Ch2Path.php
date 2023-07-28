@@ -25,7 +25,7 @@ class Ch2Path
     public $unitsPerEm;
     
     public $fontName;
-    public $i = 0;
+    public $cache;
 
     public function __construct($fontName)
     {
@@ -42,22 +42,38 @@ class Ch2Path
      * 生成文字svg path
      * 
      * @param  string  $text
-     * @param  array  $opts
+     * @param  array  $options
      * @return object
      */
-    public function get($text, $opts)
+    public function get($text, $options)
     {
         $data = null;
 
         // 开启缓存字形
-        if (!empty($opts['cache'])) {
-            unset($opts['cache']);
+        if (!empty($options['cache'])) {
+            unset($options['cache']);
             // 取字形缓存
             $data = $this->cache->get($text);
         }
 
+        if (is_null($data)) {
+            $this->getGlyph($this->fontName);
 
-        if ($data) {
+            if(empty($this->font)) {
+                throw new CaptchaException('Please load the font first.');
+            }
+
+            $fontSize = $options['size'];
+            $unitsPerEm = $this->unitsPerEm;
+            $ascender = $this->ascender;
+            $descender = $this->descender;
+            $fontScale = bcdiv("{$fontSize}", "{$unitsPerEm}", 18);
+
+            $this->glyph = new Glyph($unitsPerEm, $this->fontName);
+
+            $glyphWidth = $this->charToGlyphPath($text);
+
+        } else {
             $fontSize = $data['size'];
             $unitsPerEm = $data['unitsPerEm'];
             $fontScale = bcdiv("{$fontSize}", "{$unitsPerEm}", 18);
@@ -72,34 +88,23 @@ class Ch2Path
             // get points cache 
             $points = $this->cache->get($text, 'points');
             $this->glyph->buildPath($points);
-
-        } else {
-
-            $this->getGlyph($this->fontName);
-
-            if(empty($this->font)) {
-                throw new CaptchaException('Please load the font first.');
-            }
-
-            $fontSize = $opts['size'];
-            $unitsPerEm = $this->unitsPerEm;
-            $ascender = $this->ascender;
-            $descender = $this->descender;
-            $fontScale = bcdiv("{$fontSize}", "{$this->unitsPerEm}", 18);
-
-            $this->glyph = new Glyph($unitsPerEm, $this->fontName);
-
-            $glyphWidth = $this->charToGlyphPath($text);
         }
 
+        $width = $glyphWidth * $fontScale;
+        $left = $options['x'] - $width / 2;
+        $height = ($ascender + $descender) * $fontScale;
+        $top = $options['y'] + $height / 2;
+
+        /*
         $width = bcmul("{$glyphWidth}",  "{$fontScale}", 13);
-        $left = bcsub("{$opts['x']}", bcdiv("{$width}", '2', 13), 13);
+        $left = bcsub("{$options['x']}", bcdiv("{$width}", '2', 13), 13);
         $height = bcmul(bcadd("{$ascender}", "{$descender}"), "{$fontScale}", 13);
-        $top = bcadd("{$opts['y']}", bcdiv("{$height}", "2", 14), 14);
+        $top = bcadd("{$options['y']}", bcdiv("{$height}", "2", 14), 14);
+        */
 
         $path = $this->glyph->getPath($left, $top - 4, $fontSize);
 
-        if (!$data) {
+        if (is_null($data)) {
             // 写入缓存
             $this->cache->put($text, [
                 'text' => $text,

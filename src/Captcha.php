@@ -169,6 +169,7 @@ class Captcha
         $this->initFont($this->config['fontName']);
 
         [$answer, $equation] = $this->random->mathExpr($this->config['mathMin'], $this->config['mathMax'], $this->config['math']);
+        
         $this->svg = $this->generate($equation, $answer);
 
         return $this;
@@ -297,8 +298,8 @@ class Captcha
 
         $min = isset($this->config['inverse']) ? 7 : 1;
         $max = isset($this->config['inverse']) ? 15 : 9;
-        $i = -1;
 
+        $i = -1;
         $noiseLines = [];
         while (++$i < $this->config['noise']) {
             $start = Random::randomInt(1, 21) . ' ' . Random::randomInt(1, $height - 1);
@@ -438,11 +439,13 @@ class Captcha
      */
     public function config($config = []): array
     {
+        $defaultConfig = Config::get('scaptcha', []);
+
         if (!empty($config['type'])) {
-            return array_merge($this->config, Config::get('scaptcha', []), Config::get('scaptcha.'. $config['type'], []), $config);
+            return array_merge($this->config, $defaultConfig, Config::get('scaptcha.' . $config['type'], []), $config);
         }
 
-        return array_merge($this->config, Config::get('scaptcha', []), (array) $config);
+        return array_merge($this->config, $defaultConfig, (array) $config);
     }
 
     /**

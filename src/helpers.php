@@ -55,16 +55,12 @@ if (!function_exists('scaptcha_src')) {
 
         $confs = [];
         foreach ($config as $key => $value) {
-            if (!isset($defaults[$key])) {
-                continue;
+            if (isset($defaults[$key])) {
+                $confs[] = $key . '/' . $value ?: $defaults[$key];
             }
-
-            $confs[] = $key . '/' . $value ?: $defaults[$key];
         }
 
         $urls = implode('/', $confs);
-
-
 
         return \think\facade\Route::buildUrl('/scaptcha/svg/'. $urls);
     }

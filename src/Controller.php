@@ -19,11 +19,14 @@ class Controller
 			$captcha->deleteCache();
 		}
 
-		$data = [];
-		try {
-			$data['code'] = 0;
-			$data['msg'] = 'success';
+		$data = [
+			'code' => 0,
+			'msg' => 'success',
+			'svg' => null,
+			'token' => null,
+		];
 
+		try {
 			$content = (string) $captcha->create($config, true)->base64(isset($config['compress']) ? 2 : 1);
 
 			if (app()->isDebug()) {
@@ -36,8 +39,7 @@ class Controller
 
 		} catch (\Exception $e) {
 			$data['code'] = 1;
-			$data['svg'] = null;
-			$data['msg'] = $e->getMessage() ?? 'Unknown error';
+			$data['msg'] = $e->getMessage() ?: 'Unknown error';
 		}
 
 		return json($data);
@@ -59,7 +61,9 @@ class Controller
 
 		$content = (string) $captcha->create($config);
 
-		$headers['Content-Length'] = strlen($content);
+	    $headers = [
+	        'Content-Length' => strlen($content),
+	    ];
 
 		if (app()->isDebug()) {
 			$headers['X-Scaptcha-Mtime'] = $captcha->mctime(true);
@@ -73,8 +77,8 @@ class Controller
      */
     public function check(Captcha $captcha, \think\Request $request)
     {
-    	$code = $request->param('code') ?? null;
-    	$token = $request->param('token') ?? null;
+    	$code = $request->param('code');
+    	$token = $request->param('token');
 
         $json = [
             'code' => 0,
@@ -94,7 +98,7 @@ class Controller
 	    	}
 		} catch (\Exception $e) {
 			$json['code'] = 3;
-			$json['msg'] = $e->getMessage() ?? 'Unknown error';
+			$json['msg'] = $e->getMessage() ?: 'Unknown error';
 		}
 
         return json($json);
@@ -113,72 +117,49 @@ class Controller
 			return [];
 		}
 
-		// 额外配置类型
-		if(isset($params['t'])) {
-			$config['type'] = $params['t'];
-		}
+	    $configMapping = [
+	        't' => 'type', // 额外配置类型
+	        'w' => 'width', // 验证码宽度
+	        'h' => 'height', // 验证码高度
+	        's' => 'fontSize', // 文字大小
+	        'l' => 'size', // 显示文字数量, 非算数模式有效
+	        'n' => 'noise', // 干扰线条数量
+	        'c' => 'color', // 文字是否随机色
+	        'b' => 'background', // 背景色, fefefe
+	    ];
 
-		// 运算模式，1=加法，2=减法，3=乘法，4=除法，或者随机四种
-		if(!empty($params['m'])) {
-			if($params['m'] == 1) {
-				$config['math'] = '+';
-			} elseif($params['m'] == 2) {
-				$config['math'] =  '-';
-			} elseif($params['m'] == 3) {
-				$config['math'] =  '*';
-			} elseif($params['m'] == 4) {
-				$config['math'] =  '/';
-			} else {
-				$config['math'] = 'rand';
-			}
-		}
+	    foreach ($params as $key => $value) {
+	        if (isset($configMapping[$key])) {
+	            $config[$configMapping[$key]] = $value;
+	        }
+	    }
 
-		// 验证码宽度
-		if(!empty($params['w'])) {
-			$config['width'] = $params['w'];
-		}
+	    // 运算模式，1=加法，2=减法，3=乘法，4=除法，或者随机四种
+	    if (!empty($params['m'])) {
+	        $mathMapping = [
+	            1 => '+',
+	            2 => '-',
+	            3 => '*',
+	            4 => '/',
+	        ];
 
-		// 验证码高度
-		if(!empty($params['h'])) {
-			$config['height'] = $params['h'];
-		}
+	        $config['math'] = $mathMapping[$params['m']] ?? 'rand';
+	    }
 
-		// 文字大小
-		if(!empty($params['s'])) {
-			$config['fontSize'] = $params['s'];
-		}
+	    // api模式输出格式1=svg，2=base64
+	    if (!empty($params['cs'])) {
+	        $config['compress'] = true;
+	    }
 
-		// 显示文字数量, 非算数模式有效
-		if(!empty($params['l'])) {
-			$config['size'] = $params['l'];
-		}
+	    // 禁用缓存字形，生产模式不建议禁用
+	    if (!empty($params['rt'])) {
+	        $config['cache'] = false;
+	    }
 
-		// 干扰线条数量
-		if(!empty($params['n'])) {
-			$config['noise'] = $params['n'];
-		}
-
-		// 文字是否随机色
-		if(isset($params['c'])) {
-			$config['color'] = $params['c'] != '0';
-		}
-
-		// 背景色, fefefe
-		if(!empty($params['b'])) {
-			$config['background'] = $params['b'];
-		}
-
-		if(!empty($params['cs'])) {
-			$config['compress'] = true;
-		}
-
-		if(!empty($params['rt'])) {
-			$config['cache'] = false;
-		}
-
-		if(!empty($params['reset'])) {
-			$config['reset'] = true;
-		}
+	    // 删除已缓存字形，不建议在生产模式一直加在url参数中，否则字形缓存无效，字体文件超过3MB会比较慢
+	    if (!empty($params['reset'])) {
+	        $config['reset'] = true;
+	    }
 
 		return $config;
 	}

@@ -5,6 +5,8 @@ namespace isszz\captcha\support;
 
 class Cache
 {
+    public string $fontName;
+    
 	public function __construct(string $fontName)
 	{
         $this->fontName = mb_substr($fontName, 0, strpos($fontName, '.'));
