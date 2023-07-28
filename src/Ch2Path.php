@@ -53,7 +53,7 @@ class Ch2Path
         if (!empty($options['cache'])) {
             unset($options['cache']);
             // 取字形缓存
-            $data = $this->cache->get($text);
+            $data = $this->cache->get($text) ?: null;
         }
 
         if (is_null($data)) {

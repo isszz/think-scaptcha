@@ -27,7 +27,7 @@
 composer require isszz/think-scaptcha
 ```
 
-> 将组件内`vendor/isszz/think-scaptcha/fonts`目录下的字体放入tp根目录下config/fonts目录
+> 如果需要添加字体，放入tp根目录下config/fonts目录即可，更改配置fontName=字体文件名
 
 ## 配置
 
