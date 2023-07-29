@@ -20,18 +20,12 @@ class Cache
     /**
      * 获取字形缓存
      * 
-     * @param  string|int  $name
+     * @param  string|int  $text
      * @return string
      */
     public function get(string|int $text, $type = 'glyf')
     {
-        $path = runtime_path('scaptcha') .'glyph'. DIRECTORY_SEPARATOR . $this->fontName . DIRECTORY_SEPARATOR;
-
-        if ($type != 'base') {
-        	$path .= $type. DIRECTORY_SEPARATOR . md5($text) .'.php';
-        } else {
-        	$path .=  md5($text) .'.php';
-        }
+        $path = $this->getPath($text, $type);
 
         if(is_file($path)) {
             return (static function () use ($path) {
@@ -46,19 +40,21 @@ class Cache
      * 写入字形缓存
      * 
      * @param  string|int  $text
+     * @param  ?array  $data
      * @return string
      */
-    public function put(string|int $text, $data = null, $type = 'glyf')
+    public function put(string|int $text, ?array $data = null, string $type = 'glyf')
     {
-        $path = runtime_path('scaptcha') .'glyph'. DIRECTORY_SEPARATOR . $this->fontName . DIRECTORY_SEPARATOR;
-
-        if ($type != 'base') {
-        	$path .= $type. DIRECTORY_SEPARATOR . md5($text) .'.php';
-        } else {
-        	$path .=  md5($text) .'.php';
-        }
+        $path = $this->getPath($text, $type);
 
         return File::savePhpData($path, $data) ? true : false;
+    }
+
+    public function getPath(string|int $text, string $type = 'glyf')
+    {
+        $path = root_path('runtime') . DIRECTORY_SEPARATOR .'scaptcha'. DIRECTORY_SEPARATOR .'glyph'. DIRECTORY_SEPARATOR . $this->fontName . DIRECTORY_SEPARATOR;
+
+        return $path .($type === 'base' ? '' : $type . DIRECTORY_SEPARATOR) . md5($text) .'.php';
     }
 
     /**
