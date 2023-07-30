@@ -77,8 +77,8 @@ class Controller
      */
     public function check(Captcha $captcha, \think\Request $request)
     {
-    	$code = $request->param('code');
-    	$token = $request->param('token');
+    	$code = $request->input('code');
+    	$token = $request->input('token');
 
         $json = [
             'code' => 0,
@@ -96,8 +96,11 @@ class Controller
 	            $json['code'] = 1;
 	            $json['msg'] = 'Captcha code error';
 	    	}
-		} catch (\Exception $e) {
+		} catch (\CaptchaException $e) {
 			$json['code'] = 3;
+			$json['msg'] = $e->getMessage();
+		} catch (\Exception $e) {
+			$json['code'] = 4;
 			$json['msg'] = $e->getMessage() ?: 'Unknown error';
 		}
 

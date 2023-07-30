@@ -109,7 +109,7 @@ class Redis
      * @param  string  $key
      * @return void
      */
-    public function get(string $key): void
+    public function get(string $key)
     {
         if (!empty($result = $this->handler->get($key))) {
             return unserialize($result);

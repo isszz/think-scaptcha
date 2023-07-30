@@ -442,7 +442,7 @@ class Captcha
         $defaultConfig = Config::get('scaptcha', []);
 
         if (!empty($config['type'])) {
-            return array_merge($this->config, $defaultConfig, Config::get('scaptcha.' . $config['type'], []), $config);
+            return array_merge($this->config, $defaultConfig, ($defaultConfig[$config['type']] ?? []), $config);
         }
 
         return array_merge($this->config, $defaultConfig, (array) $config);
