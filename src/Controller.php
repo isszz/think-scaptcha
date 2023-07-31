@@ -129,6 +129,7 @@ class Controller
 	        'n' => 'noise', // 干扰线条数量
 	        'c' => 'color', // 文字是否随机色
 	        'b' => 'background', // 背景色, fefefe
+	        'd' => 'disposable', // 是否一次性验证码
 	    ];
 
 	    foreach ($params as $key => $value) {
@@ -149,6 +150,11 @@ class Controller
 	        $config['math'] = $mathMapping[$params['m']] ?? 'rand';
 	    }
 
+	    // 是否一次验证码
+	    if (isset($config['disposable'])) {
+	    	$config['disposable'] = (int) $config['disposable'];
+	    }
+	    
 	    // api模式输出格式1=svg，2=base64
 	    if (!empty($params['cs'])) {
 	        $config['compress'] = true;

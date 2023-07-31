@@ -217,6 +217,10 @@ class Captcha
             $this->token = $this->store()->put($text);
         }
 
+        if ($this->config['disposable'] == 2) {
+            $text .= '!';
+        }
+
         $this->session->set('scaptcha', $this->encrypter()->encrypt($text));
     }
 
@@ -275,9 +279,16 @@ class Captcha
         $hash = $this->session->get('scaptcha');
 
         $text = is_null($hash) ? null : $this->encrypter()->decrypt($hash);
+
+        // 检测URL里设置一次性验证码
+        if ($text && str_contains($text, '!')) {
+            $this->config['disposable'] = 2;
+            $text = rtrim($text, '!');
+        }
+
         $res = $code === $text;
 
-        if ($res || $this->config['disposable']) {
+        if ($res || ($this->config['disposable'] && $this->config['disposable'] == 2)) {
             $this->session->delete('scaptcha');
         }
 

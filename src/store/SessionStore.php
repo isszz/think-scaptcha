@@ -15,7 +15,7 @@ class SessionStore extends Store
 	 * @param string $token
 	 * @return string
 	 */
-	public function get(string $token, bool $disposable): array
+	public function get(string $token): array
 	{
 		if(!Session::has(self::TOKEN_PRE . $token)) {
 			return [];
@@ -33,7 +33,7 @@ class SessionStore extends Store
 			return [];
 		}
 
-		$disposable && Session::delete(self::TOKEN_PRE . $token);
+		($payload['d'] ?? false) && Session::delete(self::TOKEN_PRE . $token);
 
 		return json_decode($payload, true);
 	}
@@ -42,11 +42,12 @@ class SessionStore extends Store
 	 * Storage token
 	 *
 	 * @param string|int $text
+	 * @param string|int $disposable
 	 * @return string
 	 */
-	public function put(string|int $text): string
+	public function put(string|int $text, string|int $disposable): string
 	{
-		[$token, $payload] = $this->buildPayload($text);
+		[$token, $payload] = $this->buildPayload($text, $disposable);
 
 		Session::set(self::TOKEN_PRE . $token, $payload, $this->ttl);
 
