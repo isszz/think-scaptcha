@@ -479,7 +479,7 @@ class Captcha
         $this->mctime = $mctime;
     }
 
-    public function base64($type = 1)
+    public function image($type = 1)
     {
         if($this->svg) {
             if ($type == 1) {
