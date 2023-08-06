@@ -29,7 +29,7 @@ class Captcha
         'noise' => 5, // 干扰线条的数量
         'inverse' => false, // 反转颜色
         'color' => false, // 文字是否随机色
-        'background' => 'fefefe', // 验证码背景色
+        'background' => 'transparent', // 验证码背景色
         'size' => 4, // 验证码字数
         'ignoreChars' => '', // 验证码字符中排除
         'fontSize' => 72, // 字体大小
@@ -189,8 +189,13 @@ class Captcha
 
         $width = $this->config['width'];
         $height = $this->config['height'];
-
-        $rect = '<rect width="100%" height="100%" fill="#' . ($this->config['background'] ?: 'fefefe') . '"/>';
+        
+        $background = 'transparent';
+        if($this->config['background'] && $this->config['background'] != 'transparent') {
+            $background = '#'. $this->config['background'];
+        }
+        
+        $rect = '<rect width="100%" height="100%" fill="'. $background .'"/>';
         $paths = array_merge($this->getLineNoise($width, $height), $this->getText($text, $width, $height,));
 
         shuffle($paths);
@@ -262,7 +267,7 @@ class Captcha
 
             if($code == $payload['text']) {
                 // 验证成功删除token
-                // $this->store()->forget($token);
+                $this->store()->forget($token);
                 return true;
             }
 
